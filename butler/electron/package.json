@@ -1,0 +1,33 @@
+{
+  "name": "sample-electron-app",
+  "version": "1.0.0",
+  "description": "Sample electron app",
+  "main": "./dist/electron.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "Electron",
+    "Angular 2"
+  ],
+  "author": "Benjamin Dobler",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^1.4.1"
+  },
+  "build": {
+    "files": [
+      "dist/**/*"
+    ],
+    "directories": {
+      "output": "dist-packaged"
+    }
+  },
+  "dependencies": {
+    "ffbinaries": "^1.0.3",
+    "ffmpeg-binaries": "^3.2.2-3"
+  },
+  "electronModules": [
+    "ffbinaries"
+  ]
+}

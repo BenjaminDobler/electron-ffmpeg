@@ -1,0 +1,22 @@
+
+
+<button (click)="saveFile()"></button>
+<button (click)="ffmpeg.listDevices()">List</button>
+
+<br>
+Video Devices
+<ul>
+  <li *ngFor="let videoDevice of ffmpeg.videoDevices" (click)="videoDevice.selected=!videoDevice.selected">
+    {{videoDevice.name}} <span *ngIf="videoDevice.selected"> Selected</span>
+  </li>
+</ul>
+
+Audio Devices
+<ul>
+  <li *ngFor="let audioDevice of ffmpeg.audioDevices" (click)="audioDevice.selected=!audioDevice.selected">
+    {{audioDevice.name}} <span *ngIf="audioDevice.selected"> Selected</span>
+  </li>
+</ul>
+
+<button (click)="ffmpeg.startRecording()">Record</button>
+<button (click)="ffmpeg.stopRecording()">Stop</button>
