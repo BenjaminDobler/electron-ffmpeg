@@ -24,10 +24,11 @@
     }
   },
   "dependencies": {
+    "express": "^4.16.2",
     "ffbinaries": "^1.0.3",
     "ffmpeg-binaries": "^3.2.2-3"
   },
   "electronModules": [
-    "ffbinaries"
+    "ffbinaries", "express"
   ]
 }

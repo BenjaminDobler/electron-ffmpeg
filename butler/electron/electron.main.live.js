@@ -29,7 +29,10 @@ function createWindow () {
         win.loadURL(url.format({
         pathname: 'localhost:' + port,
         protocol: 'http:',
-        slashes: true
+        slashes: true,
+          webPreferences: {
+            webSecurity: false
+          }
     }))
 
     // Open the DevTools when in dev mode.

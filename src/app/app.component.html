@@ -18,5 +18,12 @@ Audio Devices
   </li>
 </ul>
 
+Recordings
+<ul>
+  <li *ngFor="let recording of ffmpeg.recordings" (click)="video.src='http://localhost:4000/'+recording.split('/')[recording.split('/').length-1]" >
+   {{recording}}
+  </li>
+</ul>
+<video #video width="300"></video>
 <button (click)="ffmpeg.startRecording()">Record</button>
 <button (click)="ffmpeg.stopRecording()">Stop</button>

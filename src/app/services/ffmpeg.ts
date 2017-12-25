@@ -3,6 +3,10 @@ import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
 import { readLine } from '../../process/util';
 import { Injectable, NgZone } from '@angular/core';
+import { existsSync, mkdirSync, readdirSync } from 'fs';
+import { Application } from 'express';
+import * as express from 'express';
+
 
 @Injectable()
 export class FfmpegService {
@@ -11,9 +15,27 @@ export class FfmpegService {
 
   videoDevices: Array<any> = [];
   audioDevices: Array<any> = [];
+  recordings: Array<any> = [];
 
 
   constructor(private zone: NgZone) {
+    this.getVideos();
+    this.listDevices();
+    this.serveVideos();
+  }
+
+
+  serveVideos() {
+    const dest = remote.app.getPath('userData') + '/electron-ffmpeg/videos';
+
+
+    const app: Application = express();
+    app.use(express.static(dest));
+
+
+    const server: any = app.listen(4000, () => {
+      console.log('Serving videos ');
+    });
 
   }
 
@@ -66,8 +88,24 @@ export class FfmpegService {
 
   recordingProcess: ChildProcess;
 
+
+  getVideos() {
+    const dest = remote.app.getPath('userData') + '/electron-ffmpeg/videos';
+    const files = readdirSync(dest);
+    this.zone.run(() => {
+      this.recordings = files.map((x) => join(dest, x));
+    });
+  }
+
   stopRecording() {
     this.recordingProcess.kill();
+  }
+
+  ensureVideoDir() {
+    var dest = remote.app.getPath('userData') + '/electron-ffmpeg/videos';
+    if (!existsSync(dest)) {
+      mkdirSync(dest);
+    }
   }
 
   startRecording() {
@@ -75,17 +113,24 @@ export class FfmpegService {
     const selectedVideoDevice: any = this.videoDevices.filter((x) => x.selected)[0];
     const selectedAudioDevice: any = this.audioDevices.filter((x) => x.selected)[0];
 
-    var dest = join(remote.app.getPath('userData'), 'electron-ffmpeg', 'output.mkv');
-    let command = `-f avfoundation -capture_cursor 1 -capture_mouse_clicks 1 -i ${selectedVideoDevice.index}:${selectedAudioDevice.index} "${dest}" -y`;
+    this.ensureVideoDir();
+    let filename: string = Date.now() + '.mkv';
+    var dest = join(remote.app.getPath(`userData`), 'electron-ffmpeg', 'videos', filename);
+
+    const command = `-f avfoundation -capture_cursor 1 -capture_mouse_clicks 1 -i ${selectedVideoDevice.index}:${selectedAudioDevice.index} "${dest}" -y`;
     console.log('Command ', command);
-    var ffmpeg = remote.app.getPath('userData') + '/electron-ffmpeg/ffmpeg';
+    const ffmpeg = remote.app.getPath('userData') + '/electron-ffmpeg/ffmpeg';
     const child: ChildProcess = spawn('"' + ffmpeg + '"', command.split(' '), { shell: true });
     this.recordingProcess = child;
     child.stdout.on('data', (data) => console.log(data.toString()));
     child.stderr.on('data', (data) => console.log(data.toString()));
     child.on('exit', () => {
-      this.isRecording = false;
-    })
+      this.zone.run(() => {
+        this.recordings.push(dest);
+        this.isRecording = false;
+      });
+
+    });
   }
 
 
