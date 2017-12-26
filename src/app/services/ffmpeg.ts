@@ -1,11 +1,12 @@
 import { remote } from 'electron';
-import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
 import { readLine } from '../../process/util';
 import { Injectable, NgZone } from '@angular/core';
 import { existsSync, mkdirSync, readdirSync } from 'fs';
 import { Application } from 'express';
 import * as express from 'express';
+import { ChildProcess, spawn } from 'child_process';
+import { Video } from '../components/Video';
 
 
 @Injectable()
@@ -16,12 +17,49 @@ export class FfmpegService {
   videoDevices: Array<any> = [];
   audioDevices: Array<any> = [];
   recordings: Array<any> = [];
+  videos: Array<Video> = [];
 
 
   constructor(private zone: NgZone) {
-    this.getVideos();
+    this.init();
+  }
+
+  async init() {
+    try {
+      this.videos = await this.getVideos();
+    } catch (e) {
+      console.log('Error ', e);
+    }
+    console.log('VVVV ', this.videos);
     this.listDevices();
     this.serveVideos();
+  }
+
+
+  getMetadata(file: string): Promise<any> {
+    // ffprobe -show_format -pretty -print_format json 1514238683069.mkv
+
+    return new Promise((resolve, reject) => {
+      const command: string = '-print_format json -show_format -show_streams "' + file + '"';
+      console.log('Command ', command);
+      let output: string = '';
+      const ffprobe = remote.app.getPath('userData') + '/electron-ffmpeg/ffprobe';
+      const child: ChildProcess = spawn('"' + ffprobe + '"', command.split(' '), { shell: true });
+      child.stdout.on('data', (data) => output += data.toString());
+      child.stderr.on('data', (data) => console.log('E', data.toString()));
+      child.on('exit', () => {
+        setTimeout(() => {
+          let d: any;
+          try {
+            d = JSON.parse(output);
+            resolve(d);
+          } catch (e) {
+            console.log(output);
+            reject(e);
+          }
+        }, 200);
+      });
+    });
   }
 
 
@@ -89,11 +127,27 @@ export class FfmpegService {
   recordingProcess: ChildProcess;
 
 
-  getVideos() {
-    const dest = remote.app.getPath('userData') + '/electron-ffmpeg/videos';
-    const files = readdirSync(dest);
-    this.zone.run(() => {
-      this.recordings = files.map((x) => join(dest, x));
+  async getVideos(): Promise<any> {
+
+    return new Promise((resolve, reject) => {
+
+
+      const dest = remote.app.getPath('userData') + '/electron-ffmpeg/videos';
+      const files = readdirSync(dest);
+      this.zone.run(async () => {
+        this.recordings = files.map((x) => join(dest, x));
+
+        const videos = await Promise.all(this.recordings.map(async (f) => {
+          const metadata: any = await this.getMetadata(f);
+          const keyframes = await this.getKeyframes(f);
+          const video: Video = new Video();
+          video.duration = metadata.format.duration * 1000;
+          video.keyframes = keyframes.packates;
+          video.file = f;
+          return video;
+        }));
+        resolve(videos);
+      });
     });
   }
 
@@ -133,5 +187,23 @@ export class FfmpegService {
     });
   }
 
+
+  getKeyframes(file: string): Promise<any> {
+    // ffprobe -show_format -pretty -print_format json 1514238683069.mkv
+
+    return new Promise((resolve, reject) => {
+      const command: string = '"' + file + '" -show_packets -show_entries packet=pts_time,flags -of json';
+      console.log('Command ', command);
+      let output: string = '';
+      const ffprobe = remote.app.getPath('userData') + '/electron-ffmpeg/ffprobe';
+      const child: ChildProcess = spawn('"' + ffprobe + '"', command.split(' '), { shell: true });
+      child.stdout.on('data', (data) => output += data.toString());
+      child.stderr.on('data', (data) => console.log('E', data.toString()));
+      child.on('exit', () => {
+        console.log(JSON.parse(output));
+        resolve(JSON.parse(output));
+      });
+    });
+  }
 
 }

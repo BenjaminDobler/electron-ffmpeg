@@ -4,11 +4,13 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { FfmpegService } from './services/ffmpeg';
+import { TrackComponent } from './components/track/track.component';
 
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    TrackComponent
   ],
   imports: [
     BrowserModule

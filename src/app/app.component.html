@@ -20,10 +20,27 @@ Audio Devices
 
 Recordings
 <ul>
-  <li *ngFor="let recording of ffmpeg.recordings" (click)="video.src='http://localhost:4000/'+recording.split('/')[recording.split('/').length-1]" >
+  <li *ngFor="let recording of ffmpeg.recordings" >
    {{recording}}
+    <button (click)="ffmpeg.getMetadata(recording)">Metadata</button>
+    <button (click)="ffmpeg.getKeyframes(recording)">Keyframes</button>
+    <button (click)="video.src='http://localhost:4000/'+recording.split('/')[recording.split('/').length-1]">Play</button>
   </li>
 </ul>
+
+
+Videos
+<ul>
+  <li *ngFor="let v of ffmpeg.videos" >
+    {{v.file}}
+    <button (click)="video.src='http://localhost:4000/'+v.file.split('/')[v.file.split('/').length-1]">Play</button>
+  </li>
+</ul>
+
+
+
+
+
 <video #video width="300"></video>
 <button (click)="ffmpeg.startRecording()">Record</button>
 <button (click)="ffmpeg.stopRecording()">Stop</button>
